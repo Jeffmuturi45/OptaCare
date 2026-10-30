@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Patients — {{ SYSTEM_NAME }}{% endblock %}
+{% block page_title %}Reception{% endblock %}
+
+{% block content %}
+<div class="od-page-tabs">
+  <a href="{% url 'patient_register' %}" class="od-page-tab">Register patient</a>
+  <span class="od-page-tab active">Search / walk-in</span>
+  <a href="{% url 'visit_list' %}" class="od-page-tab">Today's visits</a>
+</div>
+
+<div style="display:flex;gap:8px;margin-bottom:14px">
+  <form method="get" style="display:flex;gap:8px;flex:1">
+    <input type="text" name="q" value="{{ query }}"
+           class="form-input" style="flex:1"
+           placeholder="Search by phone, national ID or patient ID…"
+           autofocus/>
+    <button type="submit" class="btn btn-primary">
+      <i class="fa-solid fa-magnifying-glass"></i> Search
+    </button>
+  </form>
+  <a href="{% url 'patient_register' %}" class="btn btn-primary">
+    <i class="fa-solid fa-user-plus"></i> New patient
+  </a>
+</div>
+
+{% if query and not patients %}
+<div class="od-alert-banner">
+  <i class="fa-solid fa-circle-info"></i>
+  <span>No patients found for "<strong>{{ query }}</strong>".
+    <a href="{% url 'patient_register' %}" style="color:var(--od-green-800);font-weight:500">
+      Register as new patient
+    </a>
+  </span>
+</div>
+{% endif %}
+
+<div class="od-card" style="padding:0;overflow:hidden">
+  {% if patients %}
+  {% for p in patients %}
+  <a href="{% url 'patient_detail' p.pk %}" class="od-patient-row"
+     style="text-decoration:none">
+    <div class="od-patient-avatar">
+      {{ p.full_name|first|upper }}
+    </div>
+    <div style="flex:1">
+      <div class="od-patient-name">{{ p.full_name }}</div>
+      <div class="od-patient-meta">
+        {{ p.patient_uid }} · {{ p.gender|capfirst }} ·
+        DOB {{ p.date_of_birth|date:"d M Y" }}
+      </div>
+    </div>
+    <div style="text-align:right">
+      <span class="badge badge-{% if p.payment_type == 'insurance' %}blue{% elif p.payment_type == 'deposit' %}orange{% else %}gray{% endif %}">
+        {{ p.get_payment_type_display }}
+      </span>
+      <div style="font-size:10px;color:var(--od-ch-400);margin-top:3px">
+        Reg. {{ p.created_at|date:"d M Y" }}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+  {% else %}
+  <div style="padding:40px;text-align:center;color:var(--od-ch-400)">
+    <i class="fa-solid fa-users" style="font-size:28px;display:block;margin-bottom:8px"></i>
+    <span style="font-size:12px">Search for a patient above or register a new one</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

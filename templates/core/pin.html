@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block auth_content %}
+<div class="od-auth-wrap">
+  <div class="od-auth-card text-center">
+    <i class="fa-solid fa-lock fa-2x mb-3" style="color:var(--od-green-700)"></i>
+    <h5>Verify PIN</h5>
+    <form method="post" action="{% url 'pin_verify' %}">
+      {% csrf_token %}
+      <input type="password" name="pin" maxlength="4"
+             class="form-control od-input text-center fs-4 letter-spacing-wide mt-3"
+             placeholder="••••" autofocus inputmode="numeric"/>
+      <button class="btn od-btn-primary w-100 mt-3">Unlock</button>
+    </form>
+    <a href="{% url 'logout' %}" class="od-text-btn d-block mt-2">Sign out</a>
+  </div>
+</div>
+{% endblock %}

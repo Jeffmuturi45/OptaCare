@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — {{ SYSTEM_NAME }}{% endblock %}
+{% block page_title %}
+  {% if request.user.role == 'doctor' %}Consultation Queue
+  {% elif request.user.role == 'nurse' %}Triage Queue
+  {% elif request.user.role == 'receptionist' %}Reception
+  {% elif request.user.role == 'lab_tech' %}Lab Jobs
+  {% elif request.user.role == 'super_admin' %}System Overview
+  {% elif request.user.role == 'branch_admin' %}Branch Dashboard
+  {% else %}Dashboard{% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if request.user.role == 'super_admin' %}
+{# ── SUPER ADMIN ──────────────────────────────────────────────────────────── #}
+<div class="grid-4" style="margin-bottom:14px">
+  <div class="od-metric">
+    <div class="od-metric__label">Total branches</div>
+    <div class="od-metric__value">{{ branch_count|default:'—' }}</div>
+    <div class="od-metric__sub">Active in system</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Total users</div>
+    <div class="od-metric__value">{{ user_count|default:'—' }}</div>
+    <div class="od-metric__sub">All roles</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Patients today</div>
+    <div class="od-metric__value">{{ visits_today|default:'0' }}</div>
+    <div class="od-metric__sub">All branches</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Active sessions</div>
+    <div class="od-metric__value">{{ active_sessions|default:'—' }}</div>
+    <div class="od-metric__sub">Logged in now</div>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:14px;margin-bottom:14px">
+  <div class="od-card">
+    <div class="od-card__header">
+      <div class="od-card__title">Branches</div>
+      <a href="{% url 'superadmin_branches' %}" class="btn btn-outline btn-sm">Manage</a>
+    </div>
+    {% for branch in branches %}
+    <div class="od-patient-row">
+      <div class="od-patient-avatar">
+        {% if branch.branch_type == 'eye_clinic' %}
+          <i class="fa-solid fa-eye" style="font-size:11px"></i>
+        {% else %}
+          <i class="fa-solid fa-hospital" style="font-size:11px"></i>
+        {% endif %}
+      </div>
+      <div style="flex:1">
+        <div class="od-patient-name">{{ branch.name }}</div>
+        <div class="od-patient-meta">{{ branch.get_branch_type_display }} · {{ branch.location }}</div>
+      </div>
+      <span class="badge {% if branch.is_active %}badge-green{% else %}badge-gray{% endif %}">
+        {% if branch.is_active %}Active{% else %}Inactive{% endif %}
+      </span>
+    </div>
+    {% empty %}
+    <div style="font-size:11px;color:var(--od-ch-500);padding:16px 0;text-align:center">
+      No branches yet. <a href="{% url 'superadmin_branches' %}" style="color:var(--od-green-700)">Add one</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="od-card">
+    <div class="od-card__header">
+      <div class="od-card__title">Quick actions</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <a href="{% url 'superadmin_users' %}" class="btn btn-outline" style="justify-content:flex-start">
+        <i class="fa-solid fa-users"></i> Manage users
+      </a>
+      <a href="{% url 'superadmin_branches' %}" class="btn btn-outline" style="justify-content:flex-start">
+        <i class="fa-solid fa-hospital"></i> Manage branches
+      </a>
+      <a href="{% url 'django-admin:index' %}" class="btn btn-outline" style="justify-content:flex-start">
+        <i class="fa-solid fa-screwdriver-wrench"></i> Django admin
+      </a>
+    </div>
+  </div>
+</div>
+
+{% elif request.user.role == 'branch_admin' %}
+{# ── BRANCH ADMIN ─────────────────────────────────────────────────────────── #}
+<div class="grid-4" style="margin-bottom:14px">
+  <div class="od-metric">
+    <div class="od-metric__label">Patients today</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Registered</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Revenue today</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Ksh collected</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Outstanding</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Balance due</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Lab jobs</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Pending</div>
+  </div>
+</div>
+<div class="grid-2" style="gap:14px">
+  <div class="od-card">
+    <div class="od-card__header">
+      <div class="od-card__title">Today's patients</div>
+      <a href="{% url 'patient_list' %}" class="btn btn-outline btn-sm">View all</a>
+    </div>
+    <div style="font-size:11px;color:var(--od-ch-500);padding:20px 0;text-align:center">No patients today</div>
+  </div>
+  <div class="od-card">
+    <div class="od-card__header"><div class="od-card__title">Revenue by type</div></div>
+    <div style="font-size:11px;color:var(--od-ch-500);padding:20px 0;text-align:center">No payments recorded</div>
+  </div>
+</div>
+
+{% elif request.user.role == 'receptionist' %}
+{# ── RECEPTIONIST ─────────────────────────────────────────────────────────── #}
+<div class="grid-3" style="margin-bottom:14px">
+  <div class="od-metric">
+    <div class="od-metric__label">Walk-ins today</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Registered</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Waiting triage</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">In queue</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Appointments today</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Scheduled</div>
+  </div>
+</div>
+<div class="od-card" style="margin-bottom:14px">
+  <div class="od-card__header"><div class="od-card__title">Quick actions</div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="{% url 'patient_register' %}" class="btn btn-primary">
+      <i class="fa-solid fa-user-plus"></i> Register patient
+    </a>
+    <a href="{% url 'patient_list' %}" class="btn btn-outline">
+      <i class="fa-solid fa-magnifying-glass"></i> Search patient
+    </a>
+  </div>
+</div>
+<div class="od-card">
+  <div class="od-card__header"><div class="od-card__title">Today's queue</div></div>
+  <div style="font-size:11px;color:var(--od-ch-500);padding:20px 0;text-align:center">No active visits</div>
+</div>
+
+{% elif request.user.role == 'nurse' %}
+{# ── NURSE ────────────────────────────────────────────────────────────────── #}
+<div class="grid-3" style="margin-bottom:14px">
+  <div class="od-metric">
+    <div class="od-metric__label">Waiting triage</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Arrived</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Triaged today</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Completed</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">In consultation</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">With doctor</div>
+  </div>
+</div>
+<div class="grid-2" style="gap:14px">
+  <div class="od-card">
+    <div class="od-card__header">
+      <div class="od-card__title">Waiting for triage</div>
+      <span class="badge badge-orange">0 patients</span>
+    </div>
+    <div style="font-size:11px;color:var(--od-ch-500);padding:20px 0;text-align:center">No patients waiting</div>
+  </div>
+  <div class="od-card">
+    <div class="od-card__header"><div class="od-card__title">Triaged today</div></div>
+    <div style="font-size:11px;color:var(--od-ch-500);padding:20px 0;text-align:center">None yet</div>
+  </div>
+</div>
+
+{% elif request.user.role == 'doctor' %}
+{# ── DOCTOR ───────────────────────────────────────────────────────────────── #}
+<div class="od-alert-banner">
+  <i class="fa-solid fa-circle-info"></i>
+  <span>Your queue — patients appear here after triage is complete and assigned to you</span>
+</div>
+<div class="grid-4" style="margin-bottom:14px">
+  <div class="od-metric">
+    <div class="od-metric__label">My patients today</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Assigned to me</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Waiting</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Triaged, ready</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Completed</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Today</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Pending lab</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Awaiting results</div>
+  </div>
+</div>
+<div class="od-card">
+  <div class="od-card__header"><div class="od-card__title">Your queue</div></div>
+  <div style="text-align:center;padding:30px 0;color:var(--od-ch-400)">
+    <i class="fa-solid fa-stethoscope" style="font-size:28px;display:block;margin-bottom:8px"></i>
+    <span style="font-size:11px">No patients in queue. Patients appear here once triaged.</span>
+  </div>
+</div>
+
+{% elif request.user.role == 'lab_tech' %}
+{# ── LAB TECH ─────────────────────────────────────────────────────────────── #}
+<div class="grid-3" style="margin-bottom:14px">
+  <div class="od-metric">
+    <div class="od-metric__label">Pending jobs</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Awaiting work</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">In progress</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">Being processed</div>
+  </div>
+  <div class="od-metric">
+    <div class="od-metric__label">Ready today</div>
+    <div class="od-metric__value">0</div>
+    <div class="od-metric__sub">For collection</div>
+  </div>
+</div>
+<div class="od-card">
+  <div class="od-card__header"><div class="od-card__title">Lab job queue</div></div>
+  <div style="font-size:11px;color:var(--od-ch-500);padding:20px 0;text-align:center">No lab jobs assigned</div>
+</div>
+
+{% endif %}
+{% endblock %}

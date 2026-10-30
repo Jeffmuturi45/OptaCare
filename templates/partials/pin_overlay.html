@@ -1,0 +1,32 @@
+{% if request.user.is_authenticated and request.session.require_pin %}
+<div class="od-pin-overlay"
+     x-data="pinOverlay()"
+     x-show="show"
+     x-cloak>
+  <div class="od-pin-box">
+    <div class="od-pin-box__logo">
+      <i class="fa-solid fa-lock fa-2x"></i>
+    </div>
+    <h5>Session locked</h5>
+    <p class="text-muted small">Enter your PIN to continue</p>
+    <div class="od-pin-dots">
+      <template x-for="i in 4">
+        <span class="od-pin-dot" :class="{ filled: pin.length >= i }"></span>
+      </template>
+    </div>
+    <div class="od-pin-pad">
+      <template x-for="n in [1,2,3,4,5,6,7,8,9,'',0,'⌫']">
+        <button class="od-pin-key"
+                @click="pressKey(n)"
+                :disabled="n === ''">
+          <span x-text="n"></span>
+        </button>
+      </template>
+    </div>
+    <p class="text-danger small mt-2" x-show="error" x-text="error"></p>
+    <a href="{% url 'logout' %}" class="od-text-btn d-block mt-2">
+      Sign out instead
+    </a>
+  </div>
+</div>
+{% endif %}

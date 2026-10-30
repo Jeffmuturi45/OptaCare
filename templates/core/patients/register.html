@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block title %}Register Patient — {{ SYSTEM_NAME }}{% endblock %}
+{% block page_title %}Reception{% endblock %}
+
+{% block content %}
+<div class="od-page-tabs">
+  <span class="od-page-tab active">Register patient</span>
+  <a href="{% url 'patient_list' %}" class="od-page-tab">Search / walk-in</a>
+  <a href="{% url 'visit_list' %}" class="od-page-tab">Today's visits</a>
+</div>
+
+{% if duplicate %}
+<div style="background:#fff3e0;border:0.5px solid #fbbf24;border-radius:7px;
+            padding:12px 14px;margin-bottom:14px">
+  <div style="font-size:12px;font-weight:500;color:#b45309;margin-bottom:6px">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    Possible duplicate — patient with this phone already exists
+  </div>
+  <div class="od-patient-row" style="background:var(--od-ch-050);border-radius:6px;margin-bottom:8px">
+    <div class="od-patient-avatar">{{ duplicate.full_name|first|upper }}</div>
+    <div style="flex:1">
+      <div class="od-patient-name">{{ duplicate.full_name }}</div>
+      <div class="od-patient-meta">
+        {{ duplicate.patient_uid }} · DOB {{ duplicate.date_of_birth|date:"d M Y" }}
+      </div>
+    </div>
+    <a href="{% url 'patient_detail' duplicate.pk %}" class="btn btn-primary btn-sm">
+      Open file
+    </a>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    {% for k, v in request.POST.items %}
+      {% if k != 'csrfmiddlewaretoken' %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+      {% endif %}
+    {% endfor %}
+    <input type="hidden" name="confirm_existing" value="1">
+    <button type="submit" class="btn btn-danger btn-sm">
+      Register anyway as new patient
+    </button>
+  </form>
+</div>
+{% endif %}
+
+<form method="post" id="regForm">
+  {% csrf_token %}
+  <div class="grid-2" style="gap:16px">
+
+    {# ── LEFT: patient details ── #}
+    <div>
+      <div class="section-divider">Patient details</div>
+
+      <div class="form-group">
+        <label class="form-label">Full name *</label>
+        <input type="text" name="full_name" class="form-input" required
+               value="{{ request.POST.full_name|default:'' }}"
+               placeholder="As on national ID"/>
+        {% if form.full_name.errors %}
+          <div class="form-error">{{ form.full_name.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="grid-2" style="gap:8px">
+        <div class="form-group">
+          <label class="form-label">Date of birth *</label>
+          <input type="date" name="date_of_birth" class="form-input" required
+                 value="{{ request.POST.date_of_birth|default:'' }}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender *</label>
+          <select name="gender" class="form-select" required>
+            <option value="">Select…</option>
+            <option value="male"   {% if request.POST.gender == 'male'   %}selected{% endif %}>Male</option>
+            <option value="female" {% if request.POST.gender == 'female' %}selected{% endif %}>Female</option>
+            <option value="other"  {% if request.POST.gender == 'other'  %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:8px">
+        <div class="form-group">
+          <label class="form-label">Phone *</label>
+          <input type="tel" name="phone" class="form-input" required
+                 value="{{ request.POST.phone|default:'' }}"
+                 placeholder="07XX XXX XXX"/>
+          {% if form.phone.errors %}
+            <div class="form-error">{{ form.phone.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">ID / Passport</label>
+          <input type="text" name="national_id" class="form-input"
+                 value="{{ request.POST.national_id|default:'' }}"
+                 placeholder="National ID or passport"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email (optional)</label>
+        <input type="email" name="email" class="form-input"
+               value="{{ request.POST.email|default:'' }}"
+               placeholder="patient@email.com"/>
+      </div>
+
+      <div class="section-divider" style="margin-top:14px">Visit type</div>
+
+      <div class="od-tab-switcher" id="visitTypeSwitcher">
+        <button type="button" class="od-ts-btn active"
+                onclick="setVisitType(this,'walk_in')">
+          Walk-in (see doctor today)
+        </button>
+        <button type="button" class="od-ts-btn"
+                onclick="setVisitType(this,'appointment')">
+          Book appointment
+        </button>
+        <button type="button" class="od-ts-btn"
+                onclick="setVisitType(this,'dispensing_only')">
+          Dispensing only
+        </button>
+      </div>
+      <input type="hidden" name="visit_type" id="visitTypeInput" value="walk_in"/>
+
+      <div id="doctorSection">
+        <div class="section-divider">Assign to doctor</div>
+        {% for doc in doctors %}
+        <div class="od-doc-row">
+          <div class="od-dot-online"></div>
+          <span style="font-size:12px;flex:1">{{ doc.full_name }}</span>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="radio" name="assigned_doctor"
+                   value="{{ doc.pk }}"
+                   {% if forloop.first %}checked{% endif %}/>
+            <span style="font-size:11px;color:var(--od-ch-500)">Assign</span>
+          </label>
+        </div>
+        {% empty %}
+        <div style="font-size:11px;color:var(--od-ch-500);padding:8px 0">
+          No doctors available at this branch
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+
+    {# ── RIGHT: insurance + notes + UID ── #}
+    <div>
+      <div class="section-divider">Insurance / payment</div>
+
+      <div class="form-group">
+        <label class="form-label">Payment type *</label>
+        <select name="payment_type" class="form-select" required
+                onchange="toggleInsurance(this)">
+          <option value="cash"      {% if request.POST.payment_type == 'cash'      %}selected{% endif %}>Cash / M-Pesa</option>
+          <option value="insurance" {% if request.POST.payment_type == 'insurance' %}selected{% endif %}>Insurance</option>
+          <option value="deposit"   {% if request.POST.payment_type == 'deposit'   %}selected{% endif %}>Deposit / Prepaid</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="insuranceGroup"
+           style="display:{% if request.POST.payment_type == 'insurance' %}block{% else %}none{% endif %}">
+        <label class="form-label">Insurance / NHIF number</label>
+        <input type="text" name="insurance_no" class="form-input"
+               value="{{ request.POST.insurance_no|default:'' }}"
+               placeholder="Member number"/>
+        {% if form.insurance_no.errors %}
+          <div class="form-error">{{ form.insurance_no.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <textarea name="notes" class="form-textarea"
+                  placeholder="Reason for visit, special instructions…">{{ request.POST.notes|default:'' }}</textarea>
+      </div>
+
+      <div class="section-divider" style="margin-top:14px">Patient ID</div>
+      <div class="od-uid-box" style="margin-bottom:16px">
+        <div class="od-uid-label">Unique patient ID — generated automatically</div>
+        <div class="od-uid-value">{{ generated_uid }}</div>
+        <div class="od-uid-sub">Shared across all branches</div>
+      </div>
+
+      {% if form.errors and not form.full_name.errors and not form.phone.errors %}
+      <div style="background:#fee2e2;border:0.5px solid #fca5a5;border-radius:6px;
+                  padding:8px 12px;font-size:11px;color:#991b1b;margin-bottom:12px">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        Please fix the errors above before submitting.
+      </div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block"
+              style="margin-top:4px">
+        <i class="fa-solid fa-user-check"></i>
+        Register &amp; send to triage
+      </button>
+      <a href="{% url 'patient_list' %}" class="btn btn-outline btn-lg btn-block"
+         style="margin-top:8px">
+        Cancel
+      </a>
+    </div>
+
+  </div>
+</form>
+
+<script>
+function setVisitType(btn, value) {
+  document.querySelectorAll('.od-ts-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('visitTypeInput').value = value;
+  document.getElementById('doctorSection').style.display =
+    value === 'walk_in' ? 'block' : 'none';
+}
+
+function toggleInsurance(sel) {
+  document.getElementById('insuranceGroup').style.display =
+    sel.value === 'insurance' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

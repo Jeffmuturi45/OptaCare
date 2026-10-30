@@ -1,0 +1,92 @@
+<nav class="od-sidebar" :class="{ 'od-sidebar--collapsed': sidebarCollapsed }">
+
+  <div class="od-sidebar__brand">
+    <div class="brand">{{ SYSTEM_NAME }}</div>
+    <div class="sub" x-show="!sidebarCollapsed" x-cloak>Multi-Branch System</div>
+  </div>
+
+  {% if request.branch %}
+  <div class="od-sidebar__branch" x-show="!sidebarCollapsed" x-cloak>
+    Logged into<span>{{ request.branch.name }}</span>
+  </div>
+  {% endif %}
+
+  <div class="od-nav-section">
+
+    {% if request.user.role != 'lab_tech' and request.user.role != 'pharmacist' %}
+    <div class="od-nav-label" x-show="!sidebarCollapsed" x-cloak>Clinical</div>
+    {% endif %}
+
+    {% if request.user.role == 'super_admin' or request.user.role == 'branch_admin' or request.user.role == 'nurse' or request.user.role == 'receptionist' %}
+    <a href="{% url 'patient_list' %}"
+       class="od-nav-item {% if 'patient' in request.resolver_match.url_name %}active{% endif %}"
+       title="Reception">
+      <i class="fa-solid fa-users"></i>
+      <span class="nav-text" x-show="!sidebarCollapsed" x-cloak>Reception</span>
+    </a>
+    {% endif %}
+
+    {% if request.user.role == 'super_admin' or request.user.role == 'branch_admin' or request.user.role == 'nurse' %}
+    <a href="{% url 'visit_list' %}"
+       class="od-nav-item {% if 'visit' in request.resolver_match.url_name %}active{% endif %}"
+       title="Triage">
+      <i class="fa-solid fa-heart-pulse"></i>
+      <span class="nav-text" x-show="!sidebarCollapsed" x-cloak>Triage</span>
+    </a>
+    {% endif %}
+
+    {% if request.user.role == 'super_admin' or request.user.role == 'doctor' %}
+    <a href="{% url 'dashboard' %}"
+       class="od-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+       title="Consultation">
+      <i class="fa-solid fa-stethoscope"></i>
+      <span class="nav-text" x-show="!sidebarCollapsed" x-cloak>Consultation</span>
+    </a>
+    {% endif %}
+
+    {% if request.user.role == 'lab_tech' %}
+    <div class="od-nav-label" x-show="!sidebarCollapsed" x-cloak>Lab</div>
+    <a href="#" class="od-nav-item" title="Lab Jobs">
+      <i class="fa-solid fa-flask"></i>
+      <span class="nav-text" x-show="!sidebarCollapsed" x-cloak>Lab Jobs</span>
+    </a>
+    {% endif %}
+
+    <div class="od-nav-label" style="margin-top:8px" x-show="!sidebarCollapsed" x-cloak>Admin</div>
+
+    {% if request.user.role == 'super_admin' or request.user.role == 'branch_admin' %}
+    <a href="#" class="od-nav-item" title="Reports">
+      <i class="fa-solid fa-chart-bar"></i>
+      <span class="nav-text" x-show="!sidebarCollapsed" x-cloak>Reports</span>
+    </a>
+    {% endif %}
+
+    {% if request.user.role == 'super_admin' %}
+    <a href="{% url 'superadmin_dashboard' %}"
+       class="od-nav-item {% if 'superadmin' in request.resolver_match.url_name %}active{% endif %}"
+       title="Super Admin">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span class="nav-text" x-show="!sidebarCollapsed" x-cloak>Super Admin</span>
+    </a>
+    {% endif %}
+
+  </div>
+
+  <div class="od-sidebar__user" x-show="!sidebarCollapsed" x-cloak>
+    <div class="od-user-info">
+      <div class="od-user-avatar">{{ request.user.full_name|first|upper }}</div>
+      <div>
+        <div class="od-user-name">{{ request.user.full_name }}</div>
+        <div class="od-user-role">{{ request.user.get_role_display }}</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="od-sidebar__toggle"
+          @click="sidebarCollapsed = !sidebarCollapsed"
+          title="Toggle sidebar">
+    <i class="fa-solid"
+       :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+  </button>
+
+</nav>

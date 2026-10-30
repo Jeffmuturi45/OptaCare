@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}{{ SYSTEM_NAME }}{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link rel="stylesheet" href="{% static 'css/optacare.css' %}"/>
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="od-body">
+
+  {% if request.user.is_authenticated %}
+
+    {% include 'partials/pin_overlay.html' %}
+
+    <div class="od-shell" x-data="appShell()" x-init="init()">
+
+      {% include 'partials/sidebar.html' %}
+
+      <div class="od-main" :class="{ 'od-main--collapsed': sidebarCollapsed }">
+
+        {% include 'partials/topbar.html' %}
+
+        <div class="od-screen">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="od-alert-banner" style="margin-bottom:10px">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+          {% block content %}{% endblock %}
+        </div>
+
+      </div>
+
+      <!-- Mobile backdrop -->
+      <div class="od-sidebar-backdrop d-lg-none"
+           x-show="!sidebarCollapsed"
+           @click="sidebarCollapsed = true"
+           x-cloak></div>
+
+    </div>
+
+  {% else %}
+    {% block auth_content %}{% endblock %}
+  {% endif %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <script>
+    window.OPTACARE_CONFIG = {
+      userName:   "{{ request.user.full_name|escapejs }}",
+      clock24h:   {% if request.user.clock_format == '24h' %}true{% else %}false{% endif %},
+      requirePin: {% if request.session.require_pin %}true{% else %}false{% endif %}
+    };
+  </script>
+  <script src="{% static 'js/optacare.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

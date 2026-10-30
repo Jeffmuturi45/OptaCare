@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}{{ patient.patient_uid }} — {{ SYSTEM_NAME }}{% endblock %}
+{% block page_title %}Patient File{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+  <a href="{% url 'patient_list' %}" class="btn btn-outline btn-sm">
+    <i class="fa-solid fa-arrow-left"></i> Back
+  </a>
+  <div style="flex:1">
+    <span style="font-size:14px;font-weight:500;color:var(--od-ch-900)">
+      {{ patient.full_name }}
+    </span>
+    <span style="font-size:11px;color:var(--od-ch-500);margin-left:8px">
+      {{ patient.patient_uid }} · {{ patient.gender|capfirst }} ·
+      DOB {{ patient.date_of_birth|date:"d M Y" }}
+    </span>
+  </div>
+  <span class="badge badge-{% if patient.payment_type == 'insurance' %}blue{% elif patient.payment_type == 'deposit' %}orange{% else %}gray{% endif %}">
+    {{ patient.get_payment_type_display }}
+  </span>
+  <a href="{% url 'visit_create' %}?patient={{ patient.pk }}"
+     class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-plus"></i> New visit
+  </a>
+</div>
+
+<div class="grid-2" style="gap:14px">
+  {# Patient info card #}
+  <div class="od-card">
+    <div class="od-card__header">
+      <div class="od-card__title">Patient information</div>
+    </div>
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <tr style="border-bottom:0.5px solid var(--od-ch-100)">
+        <td style="padding:6px 0;color:var(--od-ch-500);width:40%">Patient ID</td>
+        <td style="padding:6px 0;font-weight:500">{{ patient.patient_uid }}</td>
+      </tr>
+      <tr style="border-bottom:0.5px solid var(--od-ch-100)">
+        <td style="padding:6px 0;color:var(--od-ch-500)">Full name</td>
+        <td style="padding:6px 0">{{ patient.full_name }}</td>
+      </tr>
+      <tr style="border-bottom:0.5px solid var(--od-ch-100)">
+        <td style="padding:6px 0;color:var(--od-ch-500)">Date of birth</td>
+        <td style="padding:6px 0">{{ patient.date_of_birth|date:"d M Y" }}</td>
+      </tr>
+      <tr style="border-bottom:0.5px solid var(--od-ch-100)">
+        <td style="padding:6px 0;color:var(--od-ch-500)">Gender</td>
+        <td style="padding:6px 0">{{ patient.gender|capfirst }}</td>
+      </tr>
+      <tr style="border-bottom:0.5px solid var(--od-ch-100)">
+        <td style="padding:6px 0;color:var(--od-ch-500)">Phone</td>
+        <td style="padding:6px 0">{{ patient.phone }}</td>
+      </tr>
+      {% if patient.email %}
+      <tr style="border-bottom:0.5px solid var(--od-ch-100)">
+        <td style="padding:6px 0;color:var(--od-ch-500)">Email</td>
+        <td style="padding:6px 0">{{ patient.email }}</td>
+      </tr>
+      {% endif %}
+      <tr style="border-bottom:0.5px solid var(--od-ch-100)">
+        <td style="padding:6px 0;color:var(--od-ch-500)">Payment type</td>
+        <td style="padding:6px 0">{{ patient.get_payment_type_display }}</td>
+      </tr>
+      {% if patient.insurance_no %}
+      <tr style="border-bottom:0.5px solid var(--od-ch-100)">
+        <td style="padding:6px 0;color:var(--od-ch-500)">Insurance no.</td>
+        <td style="padding:6px 0">{{ patient.insurance_no }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td style="padding:6px 0;color:var(--od-ch-500)">Registered</td>
+        <td style="padding:6px 0">
+          {{ patient.created_at|date:"d M Y H:i" }} ·
+          {{ patient.registered_at_branch.name }}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  {# Visit history #}
+  <div class="od-card">
+    <div class="od-card__header">
+      <div class="od-card__title">Visit history ({{ visits.count }})</div>
+    </div>
+    {% for v in visits %}
+    <div class="od-patient-row">
+      <div class="od-patient-avatar" style="border-radius:6px;background:var(--od-ch-100)">
+        <i class="fa-solid fa-calendar-check" style="font-size:11px;color:var(--od-ch-500)"></i>
+      </div>
+      <div style="flex:1">
+        <div class="od-patient-name">
+          {{ v.branch.name }} · {{ v.get_visit_type_display }}
+        </div>
+        <div class="od-patient-meta">
+          {{ v.registered_at|date:"d M Y H:i" }}
+          {% if v.assigned_doctor %} · Dr. {{ v.assigned_doctor.full_name }}{% endif %}
+        </div>
+      </div>
+      <span class="badge
+        {% if v.visit_status == 'completed' %}badge-green
+        {% elif v.visit_status == 'cancelled' %}badge-red
+        {% elif v.visit_status == 'in_consultation' %}badge-blue
+        {% else %}badge-orange{% endif %}">
+        {{ v.get_visit_status_display }}
+      </span>
+    </div>
+    {% empty %}
+    <div style="font-size:11px;color:var(--od-ch-500);padding:20px 0;text-align:center">
+      No visits yet
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+<div class="od-notif-panel" x-show="open" @click.outside="open = false" x-cloak>
+  <div class="od-notif-panel__header">
+    <span>Notifications</span>
+    <button class="od-text-btn" @click="markAllRead()">Mark all read</button>
+  </div>
+  <ul class="od-notif-list">
+    <template x-if="items.length === 0">
+      <li class="od-notif-empty">No new notifications</li>
+    </template>
+    <template x-for="n in items" :key="n.id">
+      <li class="od-notif-item" :class="{ unread: !n.is_read }">
+        <i class="fa-solid fa-circle-info"></i>
+        <div>
+          <div class="od-notif-title" x-text="n.title"></div>
+          <div class="od-notif-time" x-text="n.created_at"></div>
+        </div>
+      </li>
+    </template>
+  </ul>
+</div>

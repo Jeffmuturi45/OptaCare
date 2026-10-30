@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Login — {{ SYSTEM_NAME }}{% endblock %}
+
+{% block auth_content %}
+<div class="od-auth-wrap">
+  <div class="od-auth-card">
+
+    <div class="od-auth-brand">
+      <i class="fa-solid fa-hospital-user" style="font-size:32px"></i>
+      <h4>{{ SYSTEM_NAME }}</h4>
+    </div>
+
+    {% if request.GET.reason == 'idle' %}
+    <div class="od-alert-banner mb-3">
+      <i class="fa-solid fa-clock"></i>
+      <span>Session expired due to inactivity. Please sign in again.</span>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div style="background:#fee2e2;border:0.5px solid #fca5a5;border-radius:6px;
+                padding:8px 12px;font-size:12px;color:#991b1b;margin-bottom:14px">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}" id="loginForm"
+          onsubmit="setLoading()">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label">Email address</label>
+        <input type="email" name="email" class="form-input"
+               autofocus required autocomplete="username"
+               value="{{ request.POST.email|default:'' }}"
+               placeholder="you@example.com"/>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <div class="input-group">
+          <input type="password" name="password" id="pwd"
+                 class="form-input" required
+                 autocomplete="current-password"
+                 placeholder="••••••••"/>
+          <button type="button" class="btn-outline-secondary"
+                  onclick="togglePwd()">
+            <i class="fa-solid fa-eye" id="pwd-icon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary-login" id="loginBtn">
+        <span id="btn-text">Sign in</span>
+        <span id="btn-spinner" style="display:none">
+          <i class="fa-solid fa-spinner fa-spin"></i> Signing in…
+        </span>
+      </button>
+
+    </form>
+  </div>
+</div>
+
+<script>
+function togglePwd() {
+  var p = document.getElementById('pwd');
+  var i = document.getElementById('pwd-icon');
+  p.type = p.type === 'password' ? 'text' : 'password';
+  i.className = p.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+}
+function setLoading() {
+  var btn  = document.getElementById('loginBtn');
+  var text = document.getElementById('btn-text');
+  var spin = document.getElementById('btn-spinner');
+  text.style.display = 'none';
+  spin.style.display = 'inline';
+  btn.disabled = true;
+  setTimeout(function() {
+    text.style.display = 'inline';
+    spin.style.display = 'none';
+    btn.disabled = false;
+  }, 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+<div class="od-topbar">
+  <div class="od-topbar__left">
+    <button class="od-icon-btn d-lg-none" @click="sidebarCollapsed = !sidebarCollapsed">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="od-topbar__title">{% block page_title %}Dashboard{% endblock %}</div>
+  </div>
+
+  <div class="od-topbar__actions">
+
+    <!-- Clock -->
+    <div x-data="liveClock()" x-init="start()" class="od-clock d-none d-md-block">
+      <div class="od-clock__time" x-text="time"></div>
+      <div class="od-clock__date" x-text="date"></div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="position-relative" x-data="notifications()" x-init="init()">
+      <button class="od-icon-btn" @click.stop="open = !open">
+        <i class="fa-solid fa-bell"></i>
+        <span class="od-badge" x-show="unread > 0" x-text="unread" x-cloak></span>
+      </button>
+      <div class="od-notif-panel" x-show="open" @click.outside="open = false" x-cloak>
+        <div class="od-notif-panel__header">
+          <span>Notifications</span>
+          <button class="od-text-btn" @click="markAllRead()">Mark all read</button>
+        </div>
+        <ul class="od-notif-list">
+          <template x-if="items.length === 0">
+            <li class="od-notif-empty">No new notifications</li>
+          </template>
+          <template x-for="n in items" :key="n.id">
+            <li class="od-notif-item" :class="{ unread: !n.is_read }">
+              <div>
+                <div style="font-size:11px;font-weight:500" x-text="n.title"></div>
+                <div style="font-size:10px;color:var(--od-ch-500)" x-text="n.created_at"></div>
+              </div>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </div>
+
+    <!-- User menu -->
+    <div class="position-relative" x-data="{ open: false }">
+      <button class="od-icon-btn" @click.stop="open = !open" style="gap:6px;padding:4px 8px">
+        <div class="od-user-avatar" style="width:24px;height:24px;font-size:9px">
+          {{ request.user.full_name|first|upper }}
+        </div>
+        <span class="d-none d-md-inline" style="font-size:12px;color:var(--od-ch-800)">
+          {{ request.user.full_name }}
+        </span>
+        <i class="fa-solid fa-chevron-down" style="font-size:9px;color:var(--od-ch-500)"></i>
+      </button>
+      <div class="od-dropdown" x-show="open" @click.outside="open = false" x-cloak>
+        <div class="od-dropdown__header">
+          <strong>{{ request.user.full_name }}</strong>
+          <small>{{ request.user.get_role_display }}</small>
+        </div>
+        <hr style="margin:4px 0;border-color:var(--od-ch-200)"/>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="od-dropdown__item danger">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign out
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
